@@ -1,0 +1,27 @@
+
+*.mp4
+AlphaPose/
+bus.jpg
+Communication/Audio Recognition/SpeechToText.py
+config files/config.cfg
+config files/config.xml
+frame_sheet.csv
+human-pose-estimation.pytorch/
+output2.avi
+output_image_21.jpg
+output_image_30.jpg
+output_image_39.jpg
+Reference_Code.ipynb
+reverser.py
+Visuals/635986552405386657-Small-Town.jpg
+Visuals/animals.jpg
+Visuals/boats.jpg
+Visuals/furniture.avif
+Visuals/furniture.jpg
+Visuals/Git-2.43.0-64-bit.exe
+Visuals/Object_Detection.ipynb
+Visuals/test2.jpg
+Visuals/Visual_Alterations.ipynb
+yolov8n-pose.pt
+Communication/Audio Recognition/SpeechToText.py
+reverser.py
