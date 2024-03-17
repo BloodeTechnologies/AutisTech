@@ -36,24 +36,27 @@ class Entity_Manager():
         check_gray = self.totensor(cv2.cvtColor(check_image, cv2.COLOR_RGB2GRAY))
         ent_gray = self.totensor(cv2.cvtColor(check_image, cv2.COLOR_BGR2GRAY))
         check_canny = cv2.Canny(cv2.cvtColor(check_image, cv2.COLOR_RGB2GRAY), 10, 150)
-        ent_canny = cv2.Canny(cv2.cvtColor(ent_image, cv2.COLOR_RGB2GRAY), 10, 150)
-        
+        # ent_canny = cv2.Canny(cv2.cvtColor(ent_image, cv2.COLOR_RGB2GRAY), 10, 150)
         try:
-            sim = torch.median(self.cos(check_gray, ent_gray), 32)
-            print(sim.numpy())
-            return sim.numpy()
-        except:
+            sim = torch.cosine_similarity(check_gray, ent_gray, dim=1)
+            print(sim.min().numpy())
+            return sim.min().numpy()
+        except Exception as e:
+            print(e)
             return 0
     
     def check_for_similar_entities(self, check_image, label, tolerance):
+        print("Checking for similar entities. tag:", label)
         assert label != "" and label is not None
         
         if label in self.entities.keys():
             for i in self.entities[label]:
-                similarity = self.get_similarity(check_image, i.image, .6)
-                if similarity > tolerance:
-                    return True
-        
+                check_size = check_image.shape
+                y_delta = abs(check_size[0] - i.image.shape[0])
+                x_delta = abs(check_size[1] - i.image.shape[1])
+                if x_delta > 30 or y_delta > 30:
+                    continue
+                return True
         return False
     
     def check_ents(self, image, tag, area_tolerance = 10):
@@ -62,6 +65,7 @@ class Entity_Manager():
             check_area = image[x:x+w, y:y+w]
             sim = self.get_similarity(check_area, ent.image, .7)
             print(sim)
+        return False
             
     
             
@@ -76,5 +80,6 @@ class Entity_Manager():
         t = ent.type
         if t not in self.entities.keys():
             self.entities[t] = []
-        self.entities[t].append(ent)
-        self.total_entities += 1
+        if self.check_for_similar_entities(ent.image, t, 10) == False:
+            self.entities[t].append(ent)
+            self.total_entities += 1

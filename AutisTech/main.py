@@ -69,7 +69,10 @@ if __name__ == "__main__":
         
         # Now, we are going to check for any new entities.
         for k in manager.entities.keys():
-            manager.check_ents(k)
+            try:
+                manager.check_ents(k)
+            except:
+                pass
         entities = basic_detect0r.scan_for_new_entities(image, .8)
         # print(entities)
         if "car" in entities.keys():

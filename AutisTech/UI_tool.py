@@ -186,7 +186,7 @@ class UI_Tool:
         for e in self.entity_manager.entities:
             for i in self.entity_manager.entities[e]:
                 x, y, w, h = i.xywh[0], i.xywh[1], i.xywh[2], i.xywh[3]
-                img[y:y+h, x:x+w] = [0, 0, 0]
+                img[y:y+h, x:x+w] = 0
         return img
     
     def process_entity(self, original_image, entity, padding=10, return_boxed_image=False):
@@ -232,16 +232,10 @@ class UI_Tool:
         if (frame % 5) != 1 and frame != 2:
             img = self.remove_known_entities(img)
         ents = self.detector.scan_for_new_entities(img, .6)
-        for e in ents:
-            print(f"{e}:{len(ents[e])}")
-        self.entity_manager.add_entity_dict(ents)
-        for e in self.entity_manager.entities:
-            for i in self.entity_manager.entities[e]:
-                i.last_seen = self.vidcap.get(cv2.CAP_PROP_POS_FRAMES)
-                self.process_entity(self.cur_img, i, return_boxed_image=True)
-                img = cv2.rectangle(img, (i.xywh[0], i.xywh[1]), (i.xywh[0]+i.xywh[2], i.xywh[1]+i.xywh[3]), (0, 255, 0), 1, cv2.LINE_AA)
-        img = self.draw_boxes(self.shown_ents, ents, self.cur_img)       
-        return self.cur_img
+        for e in ents["person"]:
+            print(e) 
+        img = self.draw_boxes(ents, ["person"], img, (0, 0, 255))
+        return img
     
     def play(self):
         if self.is_playing == False:
@@ -268,9 +262,9 @@ class UI_Tool:
     def draw_boxes(self, ent_list, cat_list, current_frame, color=(0, 0, 255)):
         for c in cat_list:
             if c in ent_list:
-                for e in cat_list[c]:
+                for e in ent_list[c]:
                     x, y, w, h = e.xywh[0], e.xywh[1], e.xywh[2], e.xywh[3]
-                    current_frame =cv2.rectangle(current_frame, (x, y), (x+w, y+h), color, 1, cv2.LINE_AA)
+                    current_frame = cv2.rectangle(current_frame, (x, y), (x+w, y+h), color, 1, cv2.LINE_AA)
         return current_frame
     
     def refresh(self, current_frame=None, image=None):

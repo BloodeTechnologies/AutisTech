@@ -39,7 +39,7 @@ class Entity():
         exp = cv2.bitwise_not(self.image)
         exp2 = torch.sin(self.tensor_transformer(self.image))
         cv2.imshow("Exp", exp)
-        cv2.imshow("exp2", Image)
+        cv2.imshow("exp2", exp2)
         cv2.imshow("og", self.image)
         cv2.waitKey(0)
     
