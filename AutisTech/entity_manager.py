@@ -48,7 +48,7 @@ class Entity_Manager():
     def check_for_similar_entities(self, check_image, label, tolerance):
         print("Checking for similar entities. tag:", label)
         assert label != "" and label is not None
-        
+    
         if label in self.entities.keys():
             for i in self.entities[label]:
                 check_size = check_image.shape
@@ -66,9 +66,6 @@ class Entity_Manager():
             sim = self.get_similarity(check_area, ent.image, .7)
             print(sim)
         return False
-            
-    
-            
     
     def get_list(self, entity_type:str):
         if entity_type in self.entities.keys():

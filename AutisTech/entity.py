@@ -16,14 +16,12 @@ class Entity():
         if self.urgency != new_urgency:
             self.urgency = new_urgency
             
-            
     def change_position(self, new_position:tuple, msg=""):
         assert len(new_position) == 4
     
         if self.xywh != new_position:
             self.xywh = new_position
         
-            
     def compare_position(self, position_b, tolerance=32):
         for i in range(0, 4):
             n = abs(self.xywh[i] - position_b[i])
@@ -34,6 +32,9 @@ class Entity():
     def get_canny_image(self, threshold1=10, threshold2=150):
         canny = cv2.Canny(self.image, threshold1, threshold2)
         return canny
+    
+    def under_focus(self, tracker_pos, active=False, **kwargs):
+        print(tracker_pos)
     
     def get_exp_1(self):
         exp = cv2.bitwise_not(self.image)

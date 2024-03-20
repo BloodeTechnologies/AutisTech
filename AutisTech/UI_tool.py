@@ -11,7 +11,7 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 import csv
 from entity_manager import Entity_Manager
 from copy import copy
-
+import traceback
 class UI_Tool:
     
     def restart(self):
@@ -47,19 +47,21 @@ class UI_Tool:
     def motion(self, evt):
         x, y = evt.x, evt.y
         try:
-            self.check_for_entity((x, y))
+            selected = self.check_for_entity((x, y))
+            if selected is not None:
+                self.enhanced_entity(selected.image,2)
         except:
             pass
         
     def check_for_entity(self, pos):
         x2, y2 = pos[0], pos[1]
+        current_entity = None
         for e in self.current_ents:
             for i in self.current_ents[e]:
                 x, y, w, h = i.xywh[0], i.xywh[1], i.xywh[2], i.xywh[3]
                 if x2 > x and x2 < x+w and y2 > y and y2 < y+h:
-                    self.enhanced_entity(self.cur_img[y:y+h, x:x+w], 300)
-                
-        
+                    return i
+                    
     def Start_Screen(self, window, vidcap=None):
         self.window = window
         self.current_image = None
@@ -71,8 +73,6 @@ class UI_Tool:
         self.canvas.bind('<Motion>', self.motion)
         
         self.annotation_canvas = tk.Canvas(window, width=640, height=360)
-        
-        
         
         self.detector = AT.Basic_Detector()
         self.catbox = tk.Listbox(window, height = 20, width=20)
@@ -125,25 +125,25 @@ class UI_Tool:
         self.refresh()
         
     def enhanced_entity(self, img, scale):
-        shape = (img.shape[0], img.shape[1])
-        print(scale/shape[0], scale/shape[1])
+        shape = (round(img.shape[0]*scale), round(img.shape[1]*scale))
+        if shape[0] > self.cur_img.shape[0]:
+            print(self.cur_img.shape, img.shape)
+            scale = scale * 0.75
+        img = cv2.resize(img, (shape[1], shape[0]))
+        try:
+            self.cur_img[10:10+img.shape[0], 10:10+img.shape[1]] = img
+            # img = cv2.resize(img, (scaled_shape[1], scale))
+            self.current_image = Image.fromarray(cv2.cvtColor(self.cur_img, cv2.COLOR_BGR2RGB))
+            self.photo = ImageTk.PhotoImage(image=self.current_image)
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+            self.canvas.image = self.photo
+            return self.cur_img
+        except Exception as e:
+            traceback.print_exc()
+            print(e)
+            cv2.waitKey()
         
-        if shape[0] > shape[1]:
-            delta = scale/shape[0]
-            scaled_shape = (scale, int(img.shape[1] * delta))
-            img = cv2.resize(img, (scaled_shape[1], scale))
-            self.cur_img[10:10+scaled_shape[0], 10:10+scaled_shape[1]] = img
-        else:
-            delta = scale/shape[1]
-            scaled_shape = (int(img.shape[0] * delta), scale)
-            img = cv2.resize(img, (scale, scaled_shape[0]))
-            self.cur_img[10:10+scaled_shape[0], 10:10+scaled_shape[1]] = img
         
-        self.current_image = Image.fromarray(cv2.cvtColor(self.cur_img, cv2.COLOR_BGR2RGB))
-        self.photo = ImageTk.PhotoImage(image=self.current_image)
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
-        self.canvas.image = self.photo
-        return self.cur_img
         
     def import_video(self):
         id = fd.askopenfilename(title="Please choose a file",
@@ -224,7 +224,7 @@ class UI_Tool:
     
     def get_image_frame(self, current_frame=None):
         img = self.get_next_frame()
-        frame = self.vidcap.get(cv2.CAP_PROP_POS_FRAMES)
+        frame = int(self.vidcap.get(cv2.CAP_PROP_POS_FRAMES))
         img = cv2.resize(img, (640, 360))
         self.cur_img = copy(img)
         print("FRAME", frame)
@@ -232,9 +232,8 @@ class UI_Tool:
         if (frame % 5) != 1 and frame != 2:
             img = self.remove_known_entities(img)
         ents = self.detector.scan_for_new_entities(img, .6)
-        for e in ents["person"]:
-            print(e) 
-        img = self.draw_boxes(ents, ["person"], img, (0, 0, 255))
+        self.current_ents = ents
+        img = self.draw_boxes(ents, ["person"], self.cur_img, (0, 0, 255))
         return img
     
     def play(self):

@@ -61,8 +61,7 @@ class Basic_Detector():
                 ent = Entity("",(x, y, w, h), 0, label, label)
                 w2, h2 = x+w, y+h
                 img = image[y:h2, x:w2]
-                ent.image = img
-                img3 = cv2.rectangle(image, (x, y), (w2, h2), (255, 0, 0), 1, cv2.LINE_AA)
+                ent.image = image[y:h+y, x:w+x]
                 if label not in return_dict.keys():
                     return_dict[label] = []
                     return_dict[label].append(ent)
