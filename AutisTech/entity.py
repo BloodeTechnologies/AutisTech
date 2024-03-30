@@ -10,6 +10,7 @@ class Entity():
         self.tags = []
         self.image = None
         self.last_seen = 0
+        self.face = None
         self.tensor_transformer = T.ToTensor()
         
     def change_urgency(self, new_urgency, msg=""):

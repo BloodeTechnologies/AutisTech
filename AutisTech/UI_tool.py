@@ -49,7 +49,10 @@ class UI_Tool:
         try:
             selected = self.check_for_entity((x, y))
             if selected is not None:
-                self.enhanced_entity(selected.image,2)
+                if selected.face is not None:
+                    self.enhance_face(selected.face, 4)
+                else:
+                    self.enhanced_entity(selected.image,2)
         except:
             pass
         
@@ -127,7 +130,6 @@ class UI_Tool:
     def enhanced_entity(self, img, scale):
         shape = (round(img.shape[0]*scale), round(img.shape[1]*scale))
         if shape[0] > self.cur_img.shape[0]:
-            print(self.cur_img.shape, img.shape)
             scale = scale * 0.75
         img = cv2.resize(img, (shape[1], shape[0]))
         try:
@@ -141,6 +143,19 @@ class UI_Tool:
         except Exception as e:
             traceback.print_exc()
             print(e)
+            cv2.waitKey()
+            
+    def enhance_face(self, img, scale):
+        img = cv2.resize(img, (img.shape[1]*scale, img.shape[0]*scale))
+        try:
+            self.cur_img[10:10+img.shape[0], 10:10+img.shape[1]] = img
+            self.current_image = Image.fromarray(cv2.cvtColor(self.cur_img, cv2.COLOR_BGR2RGB))
+            self.photo = ImageTk.PhotoImage(image = self.current_image)
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+            self.canvas.image = self.photo
+            return self.cur_img
+        except Exception as e:
+            traceback.print_exc()
             cv2.waitKey()
         
         

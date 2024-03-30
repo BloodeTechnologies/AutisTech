@@ -3,14 +3,16 @@ import torch, torchvision
 from torchvision import transforms as T
 import os
 import numpy as np
-
+import traceback
 from entity import Entity
+from facenet_pytorch import MTCNN
+import torch.nn.functional
 
 class Basic_Detector():
     
     def __init__(self):
         super().__init__()
-        torch.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = None
         while self.model == None:
             try:
@@ -30,6 +32,27 @@ class Basic_Detector():
             classnames = f.read().splitlines()
         return classnames
     
+    def scan_for_face(self, image):
+        mtcnn = MTCNN(keep_all=True)
+        
+        boxes, _ = mtcnn.detect(image)
+        if boxes is not None:
+            x, y, w, h = round(abs(boxes[0][0])), round(abs(boxes[0][1])), round(abs(boxes[0][2])), round(abs(boxes[0][3]))
+            f = image[y:h, x:w]
+            # transformer = T.ToTensor()
+            # face_tensor = transformer(f)
+            # h, w, c = face_tensor.shape
+            # f_up = torch.nn.functional.interpolate(face_tensor, [h*2, w*2], mode='bilinear', align_corners=True)
+            # # f_up = m(face_tensor)
+            # f_up_img = torchvision.transforms.ToPILImage()(f_up)
+            # f_up_image = np.array(f_up_img)
+            # print(f_up_image.shape, f.shape, "|", image.shape)
+            
+            # cv2.imshow("f_up", f_up_image)
+            # cv2.waitKey()
+            return boxes[0]
+        
+        
     def scan_for_new_entities(self, image, threshold, entity_dict:dict = None):
         if image is None:
             return False
@@ -62,6 +85,19 @@ class Basic_Detector():
                 w2, h2 = x+w, y+h
                 img = image[y:h2, x:w2]
                 ent.image = image[y:h+y, x:w+x]
+                faces = None
+                if label == 'person':
+                    try:
+                        pass
+                        faces = self.scan_for_face(ent.image)
+                    except Exception as e:
+                        cv2.imshow("error image", ent.image)
+                        traceback.print_exception(e)
+                        print(e)
+                        print()
+                    if faces is not None:
+                        x, y, w, h = round(abs(faces[0])), round(abs(faces[1])), round(abs(faces[2])), round(abs(faces[3]))
+                        ent.face = ent.image[y-10 if y > 10 else 0:h+10, x-10 if x > 10 else 0:w+10]
                 if label not in return_dict.keys():
                     return_dict[label] = []
                     return_dict[label].append(ent)

@@ -28,3 +28,6 @@ reverser.py
 Communication/Audio Recognition/SpeechToText.py
 Communication/Audio Recognition/SpeechToText.py
 reverser.py
+*.pyc
+*.pyc
+AutisTech/__pycache__/AutisTech_OD.cpython-310.pyc
