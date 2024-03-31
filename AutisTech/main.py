@@ -117,7 +117,7 @@ class Main:
                 
     def motion(self, args):
         x, y = args.x, args.y
-        print(f"x:{x}, y:{y}")
+        # print(f"x:{x}, y:{y}")
         try:
             for cat in self.entities.values():
                 for entity in cat:
@@ -168,7 +168,15 @@ class entity_label(tk.Frame):
         # self.bind("<Leave>", self.on_leave)
 
     def convert_image(self, image):
-        image = cv2.resize(image, (50,50))
+        shape = image.shape
+        divider = 1
+        if shape[1] > shape[0]:
+            divider = 50/shape[1]
+        else:
+            divider = 50/shape[0]
+        x, y = round(shape[1]*divider), round(shape[0]*divider)
+        print(divider, x, y)
+        image = cv2.resize(image, (x, y))
         mid = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         final = ImageTk.PhotoImage(image=mid)
         return final
