@@ -1,19 +1,21 @@
 import cv2
+import os
 from PIL import ImageTk, Image
 import numpy as np
 import tkinter as tk
-
-
+import moviepy.editor as editor
+import AudioProcessing.audio_main as audio
 class AutisTech_VideoProcessor:
     def __init__(self, canvas):
         self.current_video_path = None
-        self.current_frame = None
+        self.current_frame = 0
         self.vidcap = None
         self.canvas = canvas
         self.is_playing = False
         self.show_canny = False
         self.current_image = None
         self.class_legend = self.setup_classes_legend()
+        self.audio = None
         
     def goto_frame(self, current_frame:int=None):
         if current_frame is not None:    
@@ -39,6 +41,16 @@ class AutisTech_VideoProcessor:
         
     def import_video(self, path:str):
         print("Importing the video", path)
+        video = editor.VideoFileClip(path)
+        audio_path = os.path.join(os.path.dirname(path), "audio.mp3")
+        
+        ## This stuff is for the transcription. It is not working yet, but I
+        ## want to keep the reference for later.
+        
+        # if not os.path.exists(audio_path):
+        #     self.audio = video.audio.write_audiofile(audio_path)
+        # audio.transcribe_audio(audio_path)
+        
         self.vidcap = cv2.VideoCapture(path)
         _, i = self.vidcap.read()
         self.is_playing = True
@@ -67,34 +79,6 @@ class AutisTech_VideoProcessor:
     def play_video(self, current_frame:int = None):
         self.is_playing = True
         
-    def move_forward(self):
-        self.current_frame += 1
-        self.goto_frame(self.current_frame)
-        
-    def back_one(self):
-        self.current_frame -= 1
-        self.goto_frame(self.current_frame)
-        
-    def back_10(self):
-        self.current_frame -= 10
-        self.goto_frame(self.current_frame)
-        
-    def back_50(self):
-        self.current_frame -= 50
-        self.goto_frame(self.current_frame)
-    
-    def restart(self):
-        self.current_frame = 0
-        self.goto_frame(self.current_frame)
-        
-    def move_10(self):
-        self.current_frame += 10
-        self.goto_frame(self.current_frame)
-        
-    def move_50(self):
-        self.current_frame += 50
-        self.goto_frame(self.current_frame)
-        
     def change_canny(self):
         if self.show_canny:
             self.show_canny = False
@@ -106,7 +90,7 @@ class AutisTech_VideoProcessor:
         class_legend = {
             'person':(0, 0, 255),
             'bicycle':(100, 0, 255),
-            'car':(100, 100, 255),
+            'car':(255,127,0),
             'motorcycle':(0, 100, 255),
             'airplane':(0, 200, 255),
             'bus':(140, 202, 14),
