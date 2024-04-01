@@ -38,7 +38,7 @@ class Basic_Detector():
         boxes, _ = mtcnn.detect(image)
         if boxes is not None:
             x, y, w, h = round(abs(boxes[0][0])), round(abs(boxes[0][1])), round(abs(boxes[0][2])), round(abs(boxes[0][3]))
-            f = image[y:h, x:w]
+            f = image[y-30:h+30, x-30:w+30]
             # transformer = T.ToTensor()
             # face_tensor = transformer(f)
             # h, w, c = face_tensor.shape
@@ -84,14 +84,14 @@ class Basic_Detector():
                 ent = Entity("",(x, y, w, h), 0, label, label)
                 w2, h2 = x+w, y+h
                 img = image[y:h2, x:w2]
-                ent.image = image[y:h+y, x:w+x]
+                ent.image = image[y-10:h+y+10, x-10:w+x+10]
                 faces = None
                 if label == 'person':
                     try:
-                        pass
+                        # pass
                         faces = self.scan_for_face(ent.image)
                     except Exception as e:
-                        cv2.imshow("error image", ent.image)
+                        # cv2.imshow("error image", ent.image)
                         traceback.print_exception(e)
                         print(e)
                         print()

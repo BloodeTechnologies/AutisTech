@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog as fd
 import VideoProcessing.video_main as video
+from VideoProcessing.video_main import picture_window
 import concurrent.futures
 import AutisTech_OD as at
-import cv2
+import cv2, copy
 from PIL import Image, ImageTk
 class Main:
     def __init__(self):
@@ -97,7 +98,14 @@ class Main:
         
     def clear_info(self):
         for w in self.info_frame.winfo_children():
-            w.destroy()
+            try:
+                if type(w) == entity_label:
+                    if w.sticky == False:
+                        w.destroy()
+                    else:
+                        w.show_sticky()
+            except:
+                print("Nope, that was the wrong way to keep a sticky entity")
         
     def quick_scan(self):
         entities = {None}
@@ -107,27 +115,56 @@ class Main:
         self.entities = entities
         index = 0
         self.clear_info()
-        for cat in entities.values():
-            for ent in cat:
+        for cat in entities:
+            for ent in entities[cat]:
                 self.video.draw_entity_box(ent)
+                if cat == "person":
+                    faces = self.basic.scan_for_face(ent.image)
+                    if faces is not None:
+                        x, y, w, h = round(abs(faces[0])), round(abs(faces[1])), round(abs(faces[2])), round(abs(faces[3]))
+                        ent.image = cv2.rectangle(ent.image, (x, y), (w, h), (255, 0, 0), 1, cv2.LINE_AA)
                 l = entity_label(ent, self.info_frame)
+                l.hover_func = self.show_entity_pip
+                l.on_leave_func = self.clear_pip
                 l.grid(column=0, row=index)
-                print(index)
                 index += 1
                 
     def motion(self, args):
         x, y = args.x, args.y
+        self.video.display_image(self.video.current_image)
         # print(f"x:{x}, y:{y}")
         try:
             for cat in self.entities.values():
                 for entity in cat:
                     ex, ey, ew, eh = entity.xywh[0], entity.xywh[1], entity.xywh[2], entity.xywh[3]
-                    if x > ex and x < ex+ew and y > ey and y < ey+eh:
-                        print(entity.label)
-                    else:
-                        pass
+                    if x > ex and x < ex + ew and y > ey and y < ey+eh:
+                        print("Showing entity thing")
+                        try:
+                            self.show_entity_pip((10, 10), entity)
+                        except Exception as e:
+                            print(e)
         except:
             pass
+    
+    def show_entity_pip(self, pos, ent):
+        print("show entity pip")
+        try:
+            pw = picture_window()
+            pw.setupWindow((200, 350), (10, 10), color=(50, 100, 150))
+            pw.place_window_header(color=(125, 255, 130), padx=2, pady=2, text=ent.label)
+            pw.display_image(ent.image, size_to_fit=True)
+            pw.lines.append(f"{ent.label}: ")
+            pw.lines.append(f"xywh: {ent.xywh}")
+            pw.clean_lines(pw.lines)
+            pw.setup_info_window((30, 200), .75)
+            hijacked = copy.copy(self.video.current_image)
+            hijacked[10:210, 10:360] = pw.get_window()
+            self.video.display_image(hijacked)
+        except Exception as e:
+            print("show entity pip", e)
+        
+    def clear_pip(self):
+        self.video.display_image(self.video.current_image)
 
     def move_forward(self, frames):
         self.clear_info()
@@ -146,7 +183,6 @@ class Main:
         self.video.current_frame = 0
         self.video.goto_frame(self.video.current_frame)
 
-
 class entity_label(tk.Frame):
     def __init__(self, entity, master=None):
         super().__init__(master)
@@ -164,9 +200,35 @@ class entity_label(tk.Frame):
         pic.image = img
         l.grid(column=0, row=0)
         pic.grid(column=1, row=0)
-        # self.bind("<Enter>", self.on_hover)
-        # self.bind("<Leave>", self.on_leave)
-
+        self.entity = entity
+        self.hover_func = None
+        self.on_leave_func = None
+        self.bind("<Enter>", self.on_hover)
+        self.bind("<Leave>", self.on_leave)
+        self.bind("<Button-1>", self.on_click_L)
+        self.sticky = False
+        self.sticky_frame_start = 0
+        
+    def on_hover(self, args):
+        if self.hover_func != None:
+            print(self.entity.xywh[0], self.entity.xywh[2])
+            x_d = round(abs(self.entity.xywh[0] - self.entity.xywh[2]))
+            y_d = round(abs(self.entity.xywh[1] - self.entity.xywh[3]))
+            e_img = cv2.resize(self.entity.image, (self.entity.image.shape[1]*2, self.entity.image.shape[0]*2))
+            self.hover_func((self.entity.xywh[1] - self.entity.xywh[3]//2, self.entity.xywh[0] - self.entity.xywh[2]//2), self.entity)
+            
+    def show_sticky(self):
+        e_img = cv2.resize(self.entity.image, (self.entity.image.shape[1]*2, self.entity.image.shape[0]*2))
+        self.hover_func((self.entity.xywh[1] - self.entity.xywh[3]//2, self.entity.xywh[0] - self.entity.xywh[2]//2), e_img)
+        
+    def on_leave(self, args):
+        if self.on_leave_func != None and self.sticky == False:
+            self.on_leave_func()
+            
+    def on_click_L(self, args):
+        self.sticky = not self.sticky
+        print(f"Sticky is now set to {self.sticky}")
+    
     def convert_image(self, image):
         shape = image.shape
         divider = 1
@@ -175,7 +237,6 @@ class entity_label(tk.Frame):
         else:
             divider = 50/shape[0]
         x, y = round(shape[1]*divider), round(shape[0]*divider)
-        print(divider, x, y)
         image = cv2.resize(image, (x, y))
         mid = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         final = ImageTk.PhotoImage(image=mid)
